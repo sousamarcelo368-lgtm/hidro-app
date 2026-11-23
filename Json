@@ -1,0 +1,18 @@
+{
+  "name": "Hidro - Controle de Água",
+  "short_name": "Hidro",
+  "description": "Lembretes inteligentes e controle diário da sua garrafa de água.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0A84FF",
+  "theme_color": "#0A84FF",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%230A84FF'/><path d='M256 96C256 96 136 236 136 318C136 384.3 189.7 438 256 438C322.3 438 376 384.3 376 318C376 236 256 96 256 96Z' fill='white'/><path d='M204 324C204 352.7 227.3 376 256 376' stroke='%230A84FF' stroke-width='20' stroke-linecap='round' fill='none'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
