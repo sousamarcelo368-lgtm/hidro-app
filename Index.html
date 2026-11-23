@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hidro" />
+  <meta name="theme-color" content="#0A84FF" />
+  <title>Hidro • Controle de Água</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='40' fill='%230A84FF'/><path d='M90 35C90 35 48 84 48 113C48 136.2 66.8 155 90 155C113.2 155 132 136.2 132 113C132 84 90 35 90 35Z' fill='white'/><path d='M72 115C72 124.9 80.1 133 90 133' stroke='%230A84FF' stroke-width='7' stroke-linecap='round' fill='none'/></svg>" />
+  <style>
+    :root {
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --text: #1C1C1E;
+      --subtext: #8E8E93;
+      --accent: #0A84FF;
+      --accent-soft: rgba(10, 132, 255, 0.12);
+      --water-top: #38BDF8;
+      --water-bottom: #0284C7;
+      --success: #30D158;
+      --border: rgba(60, 60, 67, 0.12);
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    body.dark {
+      --bg: #000000;
+      --card: #1C1C1E;
+      --text: #F2F2F7;
+      --subtext: #98989F;
+      --accent: #0A84FF;
+      --accent-soft: rgba(10, 132, 255, 0.2);
+      --water-top: #38BDF8;
+      --water-bottom: #0369A1;
+      --success: #32D74B;
+      --border: rgba(255, 255, 255, 0.12);
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 92px);
+      transition: background 0.25s, color 0.25s;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .title-group h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .title-group p {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: var(--subtext);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill-badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .icon-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .goal-amount {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+    }
+
+    .goal-amount span {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--subtext);
+    }
+
+    .goal-pct {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      background: var(--accent-soft);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--water-top), var(--accent));
+      border-radius: 999px;
+      transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .progress-fill.done {
+      background: linear-gradient(90deg, #34D399, var(--success));
+    }
+
+    .bottle-summary {
+      font-size: 13px;
+      color: var(--subtext);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bottle-summary strong {
+      color: var(--text);
+    }
+
+    /* Visual da Garrafa */
+    .bottle-stage {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .bottle-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bottle-cap {
+      width: 36px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 6px 6px 2px 2px;
+      margin-bottom: 2px;
+    }
+
+    .bottle-neck {
+      width: 44px;
+      height: 14px;
+      border: 3px solid var(--border);
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .bottle-body {
+      width: 88px;
+      height: 168px;
+      border: 3px solid var(--accent);
+      border-radius: 22px 22px 26px 26px;
+      position: relative;
+      overflow: hidden;
+      background: rgba(10, 132, 255, 0.05);
+    }
+
+    .bottle-water {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(180deg, var(--water-top), var(--water-bottom));
+      transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .bottle-marks {
+      position: absolute;
+      inset: 14px 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      padding-left: 8px;
+    }
+
+    .bottle-marks span {
+      width: 14px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 2px;
+    }
+
+    .bottle-label-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 15px;
+      color: var(--text);
+      text-shadow: 0 1px 6px rgba(255, 255, 255, 0.65);
+    }
+
+    body.dark .bottle-label-overlay {
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    .bottle-controls h3 {
+      margin: 0 0 4px;
+      font-size: 16px;
+    }
+
+    .bottle-controls p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--subtext);
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .action-btn {
+      border: none;
+      border-radius: 14px;
+      padding: 11px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent-soft);
+      color: var(--accent);
+      transition: transform 0.1s ease, opacity 0.2s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .action-btn.primary {
+      background: var(--accent);
+      color: #FFFFFF;
+      grid-column: span 2;
+    }
+
+    .action-btn.refill {
+      grid-column: span 2;
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text);
+    }
+
+    /* Abas */
+    .tab-view {
+      display: none;
+    }
+
+    .tab-view.active {
+      display: block;
+    }
+
+    /* Histórico 7 dias */
+    .week-bars {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      align-items: end;
+      height: 120px;
+      margin-top: 14px;
+    }
+
+    .day-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .bar-bg {
+      width: 100%;
+      max-width: 28px;
+      height: 86px;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+
+    .bar-val {
+      width: 100%;
+      background: var(--accent);
+      border-radius: 10px;
+      transition: height 0.4s ease;
+    }
+
+    .bar-val.hit {
+      background: var(--success);
+    }
+
+    .day-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--subtext);
+    }
+
+    /* Formulários */
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-row:last-child {
+      border-bottom: none;
+    }
+
+    .field-row label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .field-row input, .field-row select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .chip.selected {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .log-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .undo-btn {
+      background: none;
+      border: none;
+      color: #FF453A;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Barra inferior iOS */
+    nav.tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 8px 12px calc(env(safe-area-inset-bottom) + 8px);
+      z-index: 50;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--subtext);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+    }
+
+    .tab-btn span.ico {
+      font-size: 20px;
+    }
+
+    .toast {
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: #1C1C1E;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      transition: transform 0.3s ease;
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .status-box {
+      background: var(--accent-soft);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header>
+    <div class="title-group">
+      <h1>Hidro 💧</h1>
+      <p id="todayDateLabel">Hoje</p>
+    </div>
+    <div class="header-actions">
+      <div class="pill-badge" title="Sequência de dias batendo a meta">
+        🔥 <span id="streakCount">0</span>d
+      </div>
+      <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">🌙</button>
+    </div>
+  </header>
+
+  <!-- ABA 1: HOJE -->
+  <section id="tab-home" class="tab-view active">
+    <div class="card">
+      <div class="goal-header">
+        <div class="goal-amount"><span id="consumedDisplay" style="font-size:32px;color:var(--text)">0</span> <span>/ <span id="goalDisplay">2.500</span> ml</span></div>
+        <div class="goal-pct" id="pctDisplay">0%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="bottle-summary">
+        <span id="remainingText">Faltam <strong>2.500 ml</strong> para a meta</span>
+        <span id="bottlesLeftText">≈ 2,5 garrafas</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="bottle-stage">
+        <div class="bottle-wrapper">
+          <div class="bottle-cap"></div>
+          <div class="bottle-neck"></div>
+          <div class="bottle-body">
+            <div class="bottle-water" id="bottleWater"></div>
+            <div class="bottle-marks">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="bottle-label-overlay" id="bottleRemainingLabel">1000 ml</div>
+          </div>
+        </div>
+
+        <div class="bottle-controls">
+          <h3>Minha Garrafa (<span id="bottleCapacityTitle">1 L</span>)</h3>
+          <p id="bottleStatusSub">Cheia e pronta para beber</p>
+          <div class="btn-grid">
+            <button class="action-btn" onclick="drinkSip(150)">+ 1 Gole (150ml)</button>
+            <button class="action-btn" onclick="drinkHalfBottle()">Meia Garrafa</button>
+            <button class="action-btn primary" onclick="drinkFullBottle()">Beber Garrafa Toda</button>
+            <button class="action-btn refill" onclick="refillBottle()">🔄 Encher Garrafa Novamente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <strong style="font-size:15px;">Registros de Hoje</strong>
+        <span style="font-size:12px;color:var(--subtext);" id="bottleCountToday">0 garrafas concluídas</span>
+      </div>
+      <div id="todayLogs">
+        <p style="font-size:13px;color:var(--subtext);margin:8px 0 0;">Nenhum registro ainda hoje. Dê o primeiro gole!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 2: LEMBRETES -->
+  <section id="tab-reminders" class="tab-view">
+    <div class="card">
+      <h3 style="margin:0 0 8px;font-size:17px;">Notificações no Safari (iOS)</h3>
+      <div class="status-box" id="notifStatusBox">
+        Verificando permissão de notificações...
+      </div>
+      <button class="action-btn primary" style="width:100%;margin-bottom:8px;" onclick="requestSafariNotifications()">
+        🔔 Ativar Notificações do Safari
+      </button>
+      <button class="action-btn" style="width:100%;" onclick="sendTestNotification()">
+        Testar Notificação Agora
+      </button>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:17px;">Agenda de Lembretes</h3>
+      <p style="margin:0 0 10px;font-size:13px;color:var(--subtext);">Defina o intervalo entre avisos enquanto você está acordado:</p>
+      <div class="field-row">
+        <label for="startTime">Início do dia</label>
+        <input type="time" id="startTime" value="08:00" onchange="saveReminderSettings()" />
+      </div>
+      <div class="field-row">
+        <label for="endTime">Fim do dia</label>
+        <input type="time" id="endTime" value="22:00" onchange="saveReminderSettings()" />
+      </div>
+      <div class="field-row">
+        <label for="intervalMins">Lembrar a cada</label>
+        <select id="intervalMins" onchange="saveReminderSettings()">
+          <option value="45">45 minutos</option>
+          <option value="60" selected>1 hora</option>
+          <option value="90">1 hora e 30 min</option>
+          <option value="120">2 horas</option>
+        </select>
+      </div>
+      <div style="margin-top:12px;">
+        <span style="font-size:12px;color:var(--subtext);font-weight:600;">Próximos horários programados:</span>
+        <div class="preset-chips" id="scheduleChips"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABA 3: HISTÓRICO & METAS -->
+  <section id="tab-stats" class="tab-view">
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:17px;">Últimos 7 Dias</h3>
+      <p style="margin:0;font-size:13px;color:var(--subtext);">Barras verdes indicam meta diária batida</p>
+      <div class="week-bars" id="weekBars"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 8px;font-size:17px;">Configurar Garrafa e Meta</h3>
+      <div class="field-row">
+        <label for="bottleInput">Minha garrafa (ml)</label>
+        <input type="number" id="bottleInput" min="100" max="5000" step="50" onchange="updateSettings()" />
+      </div>
+      <div class="preset-chips" style="margin-bottom:12px;">
+        <button class="chip" onclick="setBottlePreset(500)">500 ml</button>
+        <button class="chip" onclick="setBottlePreset(750)">750 ml</button>
+        <button class="chip" onclick="setBottlePreset(1000)">1 Litro</button>
+        <button class="chip" onclick="setBottlePreset(1500)">1,5 Litros</button>
+        <button class="chip" onclick="setBottlePreset(2000)">2 Litros</button>
+      </div>
+
+      <div class="field-row">
+        <label for="goalInput">Meta diária (ml)</label>
+        <input type="number" id="goalInput" min="500" max="8000" step="100" onchange="updateSettings()" />
+      </div>
+      <div class="field-row">
+        <label for="weightInput">Calcular pelo peso (kg)</label>
+        <div style="display:flex;gap:6px;">
+          <input type="number" id="weightInput" placeholder="Ex: 75" style="width:82px;" />
+          <button class="action-btn" onclick="calcGoalByWeight()">Calcular</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('home', this)">
+      <span class="ico">💧</span>
+      <span>Garrafa</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('reminders', this)">
+      <span class="ico">🔔</span>
+      <span>Lembretes</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('stats', this)">
+      <span class="ico">📊</span>
+      <span>Metas</span>
+    </button>
+  </nav>
+
+  <script>
+    const STORAGE_KEY = 'hidro_app_v1';
+
+    function getTodayKey() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    const defaultState = {
+      goalMl: 2500,
+      bottleCapacityMl: 1000,
+      bottleCurrentMl: 1000,
+      darkMode: false,
+      startTime: '08:00',
+      endTime: '22:00',
+      intervalMins: 60,
+      history: {} // { 'YYYY-MM-DD': { totalMl: 0, logs: [] } }
+    };
+
+    let state = Object.assign({}, defaultState, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+
+    function ensureToday() {
+      const key = getTodayKey();
+      if (!state.history[key]) {
+        state.history[key] = { totalMl: 0, logs: [] };
+      }
+      return state.history[key];
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2400);
+    }
+
+    function formatLiters(ml) {
+      return ml >= 1000 ? (ml / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' L' : ml + ' ml';
+    }
+
+    function logWater(ml, label) {
+      if (ml <= 0) return;
+      const today = ensureToday();
+      const prevTotal = today.totalMl;
+      today.totalMl += ml;
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      today.logs.unshift({ id: Date.now(), ml, label, time: timeStr });
+
+      if (prevTotal < state.goalMl && today.totalMl >= state.goalMl) {
+        showToast('🎉 Parabéns! Meta diária atingida!');
+      } else {
+        showToast(`+${ml} ml registrados 💧`);
+      }
+      saveState();
+    }
+
+    function drinkSip(ml) {
+      const amount = Math.min(ml, state.bottleCurrentMl || state.bottleCapacityMl);
+      if (state.bottleCurrentMl <= 0) {
+        state.bottleCurrentMl = state.bottleCapacityMl;
+      }
+      const actual = Math.min(ml, state.bottleCurrentMl);
+      state.bottleCurrentMl -= actual;
+      logWater(actual, 'Gole na garrafa');
+    }
+
+    function drinkHalfBottle() {
+      if (state.bottleCurrentMl <= 0) state.bottleCurrentMl = state.bottleCapacityMl;
+      const half = Math.round(state.bottleCapacityMl / 2);
+      const actual = Math.min(half, state.bottleCurrentMl);
+      state.bottleCurrentMl -= actual;
+      logWater(actual, 'Meia garrafa');
+    }
+
+    function drinkFullBottle() {
+      const amount = state.bottleCurrentMl > 0 ? state.bottleCurrentMl : state.bottleCapacityMl;
+      state.bottleCurrentMl = 0;
+      logWater(amount, 'Garrafa completa');
+    }
+
+    function refillBottle() {
+      state.bottleCurrentMl = state.bottleCapacityMl;
+      showToast('🔄 Garrafa cheia novamente!');
+      saveState();
+    }
+
+    function removeLog(id) {
+      const today = ensureToday();
+      const idx = today.logs.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        const removed = today.logs.splice(idx, 1)[0];
+        today.totalMl = Math.max(0, today.totalMl - removed.ml);
+        state.bottleCurrentMl = Math.min(state.bottleCapacityMl, state.bottleCurrentMl + removed.ml);
+        saveState();
+      }
+    }
+
+    function calculateStreak() {
+      let streak = 0;
+      const d = new Date();
+      // Verifica hoje primeiro
+      const todayKey = getTodayKey();
+      if ((state.history[todayKey]?.totalMl || 0) >= state.goalMl) {
+        streak++;
+      }
+      // Verifica dias anteriores consecutivos
+      for (let i = 1; i <= 365; i++) {
+        const past = new Date(d);
+        past.setDate(d.getDate() - i);
+        const k = past.getFullYear() + '-' + String(past.getMonth() + 1).padStart(2, '0') + '-' + String(past.getDate()).padStart(2, '0');
+        if ((state.history[k]?.totalMl || 0) >= state.goalMl) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+      return streak;
+    }
+
+    function renderAll() {
+      document.body.classList.toggle('dark', state.darkMode);
+      document.getElementById('themeToggle').textContent = state.darkMode ? '☀️' : '🌙';
+
+      const today = ensureToday();
+      const pct = Math.min(100, Math.round((today.totalMl / state.goalMl) * 100));
+      const remaining = Math.max(0, state.goalMl - today.totalMl);
+      const bottlesLeft = (remaining / state.bottleCapacityMl).toFixed(1).replace('.', ',');
+
+      document.getElementById('consumedDisplay').textContent = today.totalMl.toLocaleString('pt-BR');
+      document.getElementById('goalDisplay').textContent = state.goalMl.toLocaleString('pt-BR');
+      document.getElementById('pctDisplay').textContent = pct + '%';
+
+      const fill = document.getElementById('progressFill');
+      fill.style.width = pct + '%';
+      fill.classList.toggle('done', today.totalMl >= state.goalMl);
+
+      document.getElementById('remainingText').innerHTML = remaining > 0
+        ? `Faltam <strong>${remaining.toLocaleString('pt-BR')} ml</strong> para a meta`
+        : `<strong>Meta concluída!</strong> Hidratação em dia`;
+
+      document.getElementById('bottlesLeftText').textContent = remaining > 0
+        ? `≈ ${bottlesLeft} garrafa(s)`
+        : '✅ 100%';
+
+      // Garrafa visual
+      const bottlePct = Math.max(0, Math.min(100, (state.bottleCurrentMl / state.bottleCapacityMl) * 100));
+      document.getElementById('bottleWater').style.height = bottlePct + '%';
+      document.getElementById('bottleRemainingLabel').textContent = state.bottleCurrentMl + ' ml';
+      document.getElementById('bottleCapacityTitle').textContent = formatLiters(state.bottleCapacityMl);
+
+      const statusSub = document.getElementById('bottleStatusSub');
+      if (state.bottleCurrentMl === 0) {
+        statusSub.textContent = 'Garrafa vazia • toque em Encher';
+      } else if (state.bottleCurrentMl === state.bottleCapacityMl) {
+        statusSub.textContent = 'Cheia e pronta para beber';
+      } else {
+        statusSub.textContent = `Restam ${state.bottleCurrentMl} ml na garrafa`;
+      }
+
+      // Streak & Logs
+      document.getElementById('streakCount').textContent = calculateStreak();
+      const completedBottles = (today.totalMl / state.bottleCapacityMl).toFixed(1).replace('.', ',');
+      document.getElementById('bottleCountToday').textContent = `${completedBottles} garrafas hoje`;
+
+      const logsContainer = document.getElementById('todayLogs');
+      if (today.logs.length === 0) {
+        logsContainer.innerHTML = '<p style="font-size:13px;color:var(--subtext);margin:8px 0 0;">Nenhum registro ainda hoje. Dê o primeiro gole!</p>';
+      } else {
+        logsContainer.innerHTML = today.logs.map(item => `
+          <div class="log-item">
+            <div><strong>+${item.ml} ml</strong> • <span style="color:var(--subtext)">${item.label} (${item.time})</span></div>
+            <button class="undo-btn" onclick="removeLog(${item.id})">Desfazer</button>
+          </div>
+        `).join('');
+      }
+
+      // Inputs
+      document.getElementById('bottleInput').value = state.bottleCapacityMl;
+      document.getElementById('goalInput').value = state.goalMl;
+      document.getElementById('startTime').value = state.startTime;
+      document.getElementById('endTime').value = state.endTime;
+      document.getElementById('intervalMins').value = state.intervalMins;
+
+      renderWeekBars();
+      renderSchedulePreview();
+      updateNotificationStatus();
+    }
+
+    function renderWeekBars() {
+      const container = document.getElementById('weekBars');
+      const daysPt = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const d = new Date();
+      let html = '';
+
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(d);
+        day.setDate(d.getDate() - i);
+        const key = day.getFullYear() + '-' + String(day.getMonth() + 1).padStart(2, '0') + '-' + String(day.getDate()).padStart(2, '0');
+        const total = state.history[key]?.totalMl || 0;
+        const pct = Math.min(100, Math.round((total / state.goalMl) * 100));
+        const hit = total >= state.goalMl;
+
+        html += `
+          <div class="day-col">
+            <div class="bar-bg">
+              <div class="bar-val ${hit ? 'hit' : ''}" style="height:${Math.max(6, pct)}%"></div>
+            </div>
+            <span class="day-name">${daysPt[day.getDay()]}</span>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function renderSchedulePreview() {
+      const [sh, sm] = state.startTime.split(':').map(Number);
+      const [eh, em] = state.endTime.split(':').map(Number);
+      let startMin = sh * 60 + sm;
+      const endMin = eh * 60 + em;
+      const step = Number(state.intervalMins) || 60;
+      const chips = [];
+
+      while (startMin <= endMin && chips.length < 16) {
+        const h = String(Math.floor(startMin / 60)).padStart(2, '0');
+        const m = String(startMin % 60).padStart(2, '0');
+        chips.push(`${h}:${m}`);
+        startMin += step;
+      }
+
+      document.getElementById('scheduleChips').innerHTML = chips.map(t => `<span class="chip">${t}</span>`).join('');
+    }
+
+    function updateSettings() {
+      const b = parseInt(document.getElementById('bottleInput').value, 10);
+      const g = parseInt(document.getElementById('goalInput').value, 10);
+      if (b >= 100) {
+        state.bottleCapacityMl = b;
+        state.bottleCurrentMl = b;
+      }
+      if (g >= 500) {
+        state.goalMl = g;
+      }
+      showToast('Configurações salvas!');
+      saveState();
+    }
+
+    function setBottlePreset(ml) {
+      state.bottleCapacityMl = ml;
+      state.bottleCurrentMl = ml;
+      showToast(`Garrafa definida para ${formatLiters(ml)}`);
+      saveState();
+    }
+
+    function calcGoalByWeight() {
+      const w = parseFloat(document.getElementById('weightInput').value);
+      if (w && w > 20) {
+        const recommended = Math.round((w * 35) / 50) * 50;
+        state.goalMl = recommended;
+        showToast(`Meta sugerida: ${recommended} ml`);
+        saveState();
+      }
+    }
+
+    function saveReminderSettings() {
+      state.startTime = document.getElementById('startTime').value;
+      state.endTime = document.getElementById('endTime').value;
+      state.intervalMins = parseInt(document.getElementById('intervalMins').value, 10);
+      saveState();
+      showToast('Horários atualizados!');
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      state.darkMode = !state.darkMode;
+      saveState();
+    });
+
+    // Notificações Safari / Service Worker
+    function updateNotificationStatus() {
+      const box = document.getElementById('notifStatusBox');
+      if (!('Notification' in window)) {
+        box.innerHTML = '⚠️ Para ativar notificações no iPhone, toque em <strong>Compartilhar > Adicionar à Tela de Início</strong> no Safari e abra o app pelo ícone criado.';
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        box.innerHTML = '✅ <strong>Notificações ativadas!</strong> O iPhone está autorizado a exibir seus alertas de hidratação.';
+      } else if (Notification.permission === 'denied') {
+        box.innerHTML = '🚫 Permissão bloqueada. Vá em <strong>Ajustes > Hidro > Notificações</strong> no iPhone para permitir.';
+      } else {
+        box.innerHTML = '🔔 Toque no botão abaixo para autorizar o iPhone a enviar lembretes de água.';
+      }
+    }
+
+    async function requestSafariNotifications() {
+      if (!('Notification' in window)) {
+        showToast('Abra pela Tela de Início primeiro');
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      updateNotificationStatus();
+      if (perm === 'granted') {
+        sendTestNotification();
+      }
+    }
+
+    async function sendTestNotification() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') {
+        showToast('Ative a permissão primeiro');
+        return;
+      }
+      const reg = await navigator.serviceWorker?.ready;
+      if (reg) {
+        reg.showNotification('Hora de beber água! 💧', {
+          body: `Sua garrafa de ${formatLiters(state.bottleCapacityMl)} está esperando. Faltam ${Math.max(0, state.goalMl - ensureToday().totalMl)} ml para sua meta.`,
+          tag: 'hidro-reminder'
+        });
+      } else {
+        new Notification('Hora de beber água! 💧', {
+          body: `Dê um gole na sua garrafa de ${formatLiters(state.bottleCapacityMl)}!`
+        });
+      }
+    }
+
+    // Checagem periódica enquanto o app estiver aberto
+    setInterval(() => {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      const now = new Date();
+      if (now.getSeconds() !== 0) return;
+      const currentStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const chips = Array.from(document.querySelectorAll('#scheduleChips .chip')).map(c => c.textContent);
+      if (chips.includes(currentStr)) {
+        sendTestNotification();
+      }
+    }, 1000);
+
+    // Registro do Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // Data no cabeçalho
+    document.getElementById('todayDateLabel').textContent = new Date().toLocaleDateString('pt-BR', {
+      weekday: 'long', day: 'numeric', month: 'short'
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
